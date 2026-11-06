@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+.ruff_cache/
+
+# The recording and anything derived from it (copyrighted; never publish)
+audio/
+separated/
+work/
+data/
+
+# Model weights, downloaded by the pipeline
+models/
+
+.DS_Store

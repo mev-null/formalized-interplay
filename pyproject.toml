@@ -1,0 +1,29 @@
+[project]
+name = "formalized-interplay"
+version = "0.1.0"
+description = "Formalizing interplay in Bill Evans Trio's \"Autumn Leaves\" via Xenakis' stochastic theory"
+requires-python = ">=3.12,<3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "demucs==4.0.1",
+    "torch==2.5.1",
+    "torchaudio==2.5.1",
+    "soundfile",
+    "numpy<2.1",
+    "piano-transcription-inference>=0.0.6",
+    "librosa>=0.11.0",
+    "pandas>=3.1.0",
+    "matplotlib>=3.11.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.4",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

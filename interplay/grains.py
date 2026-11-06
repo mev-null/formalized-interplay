@@ -1,4 +1,4 @@
-"""Step 3: grains and beats.
+"""Step 3: grains, and the beat grid (`beats`).
 
 A grain is one sound event (a note or a hit) with its onset time, a frequency value (pitch, or
 brightness for the drums) and an intensity. The beat grid (`beats.py`) gives the time steps of

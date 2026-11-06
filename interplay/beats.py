@@ -1,4 +1,4 @@
-"""The beat grid, estimated part by part (`config.PARTS`).
+"""Step 3 (with `grains`): the beat grid, estimated part by part (`config.PARTS`).
 
 Each part is tracked on its own, then each beat is shifted by the local circular-mean offset of
 the onsets of the instruments that keep the pulse in that part. Beats near a part boundary are

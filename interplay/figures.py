@@ -1,7 +1,9 @@
-"""Step 6: the report's figures (§3.4), the middle 16 bars of each section.
+"""Step 6: the report's figures (§3.4).
 
 Figure 1: the three players' paths in the screen space.
-Figure 2: the ruled surface of each pair, drawn as a sheet.
+Figure 2: the probability density of each player's beats in the screen space, whole sections.
+Figure 3: the ruled surface of each pair, drawn as a sheet.
+Figures 1 and 3 show the middle 16 bars of each section; Figure 2 shows the whole sections.
 """
 
 import matplotlib
@@ -10,12 +12,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.colors import LightSource, to_rgb
+from matplotlib.colors import LightSource, LinearSegmentedColormap, to_rgb
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from .config import BEATS_PER_BAR, DATA_DIR, FIG_DIR, INSTRUMENTS, SECTIONS, TITLES, section_of
 from .ruled import PAIRS
-from .screen_space import positions, positions_at
+from .screen_space import AXES, positions, positions_at
 
 COLORS = {"piano": "#3b6fb6", "bass": "#c8553d", "drums": "#5a9e6f"}
 PAIR_COLORS = {
@@ -47,7 +49,7 @@ def shown_span(table: pd.DataFrame, section: str) -> tuple[float, float]:
 def style_axes(ax, fontsize: int = 7, labelpad: int = -10) -> None:
     for setter in (ax.set_xlim, ax.set_ylim, ax.set_zlim):
         setter(-LIMIT, LIMIT)
-    ax.set_xlabel("Register", fontsize=fontsize, labelpad=labelpad)
+    ax.set_xlabel("Frequency", fontsize=fontsize, labelpad=labelpad)
     ax.set_ylabel("Loudness", fontsize=fontsize, labelpad=labelpad)
     ax.set_zlabel("Density", fontsize=fontsize, labelpad=labelpad)
     ax.tick_params(labelsize=0, pad=-4)
@@ -155,11 +157,116 @@ def fig_ruled_surfaces(table: pd.DataFrame) -> None:
         bbox_to_anchor=(0.5, 0.06),
     )
     fig.subplots_adjust(wspace=0.02, hspace=0.12)
-    fig.savefig(FIG_DIR / "fig2_ruled_surfaces.png", dpi=200, bbox_inches="tight")
+    fig.savefig(FIG_DIR / "fig3_ruled_surfaces.png", dpi=200, bbox_inches="tight")
+
+
+def kde(points: np.ndarray, bandwidth: np.ndarray, at: np.ndarray) -> np.ndarray:
+    """Gaussian kernel density (diagonal bandwidth) of `points` evaluated at `at`."""
+    d = (at[:, None, :] - points[None, :, :]) / bandwidth
+    norm = len(points) * (2 * np.pi) ** (len(bandwidth) / 2) * bandwidth.prod()
+    return np.exp(-0.5 * (d**2).sum(axis=2)).sum(axis=1) / norm
+
+
+def density_change(table: pd.DataFrame, name: str, section: str) -> float:
+    """Mean absolute change of density between consecutive beats within a section."""
+    within = table.section.eq(section) & table.section.shift(1).eq(section)
+    return float(table[f"{name}_density"].diff()[within].abs().mean())
+
+
+def fig_distribution(table: pd.DataFrame) -> pd.DataFrame:
+    """Probability density of each player's beats in each section, in the screen space.
+
+    Beats are points coloured by the 3D density; the walls show the 2D marginal densities.
+    Bandwidth (Scott's rule) comes from both sections pooled, and the colour scale is shared
+    within each player.
+    """
+    fig = plt.figure(figsize=(10, 6.6))
+    grid = np.linspace(-LIMIT, LIMIT, 60)
+    gx, gy = np.meshgrid(grid, grid)
+    plane = np.column_stack([gx.ravel(), gy.ravel()])
+    # wall position and the two axes it shows, for each pair of axes
+    walls = {(0, 1): ("z", -LIMIT), (0, 2): ("y", LIMIT), (1, 2): ("x", -LIMIT)}
+    rows = []
+    for col, name in enumerate(INSTRUMENTS):
+        pts = {s: positions(table[table.section == s], name) for s in SECTIONS}
+        pooled = np.concatenate(list(pts.values()))
+        bandwidth = pooled.std(axis=0, ddof=1) * len(pooled) ** (-1 / 7)
+        heights = {s: kde(p, bandwidth, p) for s, p in pts.items()}
+        top = max(h.max() for h in heights.values())
+        cmap = LinearSegmentedColormap.from_list(name, ["#dcdcdc", COLORS[name], "#1a1a1a"])
+        for row, s in enumerate(SECTIONS):
+            p = pts[s]
+            ax = fig.add_subplot(
+                len(SECTIONS), len(INSTRUMENTS), row * len(INSTRUMENTS) + col + 1, projection="3d"
+            )
+            ax.computed_zorder = False
+            for (i, j), (zdir, offset) in walls.items():
+                z = kde(p[:, [i, j]], bandwidth[[i, j]], plane).reshape(gx.shape)
+                if zdir == "z":
+                    args = (gx, gy, z)
+                elif zdir == "y":
+                    args = (gx, z, gy)
+                else:
+                    args = (z, gx, gy)
+                ax.contourf(
+                    *args,
+                    zdir=zdir,
+                    offset=offset,
+                    levels=np.linspace(z.max() * 0.08, z.max(), 7),
+                    cmap=cmap,
+                    alpha=0.55,
+                    zorder=0,
+                )
+            q = np.clip(p, -LIMIT, LIMIT)
+            order = np.argsort(heights[s])
+            ax.scatter(
+                *q[order].T,
+                c=heights[s][order],
+                cmap=cmap,
+                vmin=0,
+                vmax=top,
+                s=7,
+                depthshade=False,
+                linewidths=0,
+                zorder=2,
+            )
+            style_axes(ax, fontsize=7, labelpad=-10)
+            if row == 0:
+                ax.set_title(name.capitalize(), fontsize=10)
+            if col == 0:
+                ax.text2D(
+                    -0.08,
+                    0.5,
+                    TITLES[s],
+                    transform=ax.transAxes,
+                    rotation=90,
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    weight="bold",
+                )
+            cov = np.cov(p.T)
+            rows.append(
+                {
+                    "player": name,
+                    "section": s,
+                    "n": len(p),
+                    **{f"sd_{a}": np.sqrt(cov[k, k]) for k, a in enumerate(AXES)},
+                    "spread": np.linalg.det(cov) ** (1 / 6),
+                    "density_change": density_change(table, name, s),
+                }
+            )
+    fig.subplots_adjust(wspace=0.02, hspace=0.08)
+    fig.savefig(FIG_DIR / "fig2_distribution.png", dpi=200, bbox_inches="tight")
+    return pd.DataFrame(rows)
 
 
 def run() -> None:
     FIG_DIR.mkdir(exist_ok=True)
     table = pd.read_csv(DATA_DIR / "ruled.csv", index_col="beat")
     fig_trajectories(table)
+    spread = fig_distribution(table)
+    spread.to_csv(DATA_DIR / "spread.csv", index=False)
+    with pd.option_context("display.width", 120, "display.precision", 2):
+        print(spread.to_string(index=False))
     fig_ruled_surfaces(table)

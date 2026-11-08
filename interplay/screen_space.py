@@ -1,6 +1,6 @@
-"""Step 4: each player as a point in the screen space (register, loudness, density).
+"""Step 4: each player as a point in the screen space (frequency, loudness, density).
 
-Grains are smoothed with a Gaussian window (sigma 2 beats). Density is grains per beat; register
+Grains are smoothed with a Gaussian window (sigma 2 beats). Density is grains per beat; frequency
 and loudness are the window-weighted means, pulled to the player's mean when the player is
 silent. Each axis is z-scored per player, so the origin is that player's usual state.
 """

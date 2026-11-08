@@ -31,7 +31,7 @@ PAIR_COLORS = {
     ("bass", "drums"): "#ffd166",
 }
 SHADES = {"fixed": "#4a4a4a", "interplay": "#6b5410"}
-AXIS_LABELS = {"frequency": "Register / brightness", "intensity": "Loudness", "density": "Density"}
+AXIS_LABELS = {"frequency": "Frequency", "intensity": "Loudness", "density": "Density"}
 MEMORY = 32
 GIF_STEP = 3
 GIF_FPS = 10

@@ -10,7 +10,7 @@ Target recording: Bill Evans Trio, "Autumn Leaves", *Portrait in Jazz* (Riversid
 
 The analysis adapts two ideas of Iannis Xenakis from *Formalized Music* to a recorded performance:
 
-- **Screen.** Xenakis writes any sound as a function s(F, G, D, t) of frequency, intensity, density and time, and places grains of sound within each time slice Δt on a frequency × intensity grid (the screen). Here each player at each beat is one point in a space of register, loudness and density, restoring the density axis; the beat plays the role of Δt.
+- **Screen.** Xenakis writes any sound as a function s(F, G, D, t) of frequency, intensity, density and time, and places grains of sound within each time slice Δt on a frequency × intensity grid (the screen). Here each player at each beat is one point in a space of frequency, loudness and density, restoring the density axis; the beat plays the role of Δt.
 - **Ruled surface.** In *Metastaseis* (1953–54) string glissandi are straight lines on the pitch–time plane, and their bundle forms a ruled surface, a shape Xenakis later used for the Philips Pavilion (1958). Here the line joins two players at each beat and is drawn in the screen space rather than along a time axis. Players moving alike give a flat surface; one moving and the other following late twists it.
 
 ## Requirements
@@ -39,7 +39,7 @@ uv run python -m interplay figures      # one step, from the files the previous 
 | `grains` | beats per part (`beats.py`) and note/onset events | `data/beats.csv`, `data/grains_*.csv` |
 | `screen-space` | per-beat positions of each player | `data/screen_space.csv` |
 | `ruled` | twist of each pair | `data/ruled.csv` |
-| `figures` | Fig. 1 and Fig. 2 | `figures/fig1_trajectories.png`, `figures/fig2_ruled_surfaces.png` |
+| `figures` | Fig. 1 to Fig. 3 | `figures/fig1_trajectories.png`, `figures/fig2_distribution.png`, `figures/fig3_ruled_surfaces.png` |
 | `animation` | ruled-surface GIF (not in the paper) | `figures/ruled.gif` |
 
 `transcribe` downloads the pretrained weights from Zenodo to `models/` and checks their SHA-256.
